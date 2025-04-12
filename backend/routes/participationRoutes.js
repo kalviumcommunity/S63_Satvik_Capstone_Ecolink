@@ -28,4 +28,23 @@ router.get('/', (req, res) => {
   res.json(participants);
 });
 
+// POST /api/participants - Add a new participant
+router.post('/', (req, res) => {
+    const { name, event, contribution } = req.body;
+  
+    if (!name || !event || !contribution) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+  
+    const newParticipant = {
+      id: participants.length + 1,
+      name,
+      event,
+      contribution
+    };
+  
+    participants.push(newParticipant);
+    res.status(201).json(newParticipant);
+  });
+  
 module.exports = router;
