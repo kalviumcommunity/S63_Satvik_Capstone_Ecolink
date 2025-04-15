@@ -46,5 +46,26 @@ router.post('/', (req, res) => {
     users.push(newUser);
     res.status(201).json(newUser);
   });
+
+// PUT /api/users/:id - Update user details
+router.put('/:id', (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { name, email, location } = req.body;
+  
+    const index = users.findIndex(user => user.id === userId);
+    if (index === -1) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+  
+    // Update fields if provided
+    users[index] = {
+      ...users[index],
+      name: name || users[index].name,
+      email: email || users[index].email,
+      location: location || users[index].location
+    };
+  
+    res.json(users[index]);
+  });
   
 module.exports = router;

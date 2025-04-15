@@ -55,4 +55,28 @@ router.post('/', (req, res) => {
     res.status(201).json(newEvent);
   });
 
+ // PUT /api/events/:id - Update an existing event
+router.put('/:id', (req, res) => {
+    const eventId = parseInt(req.params.id);
+    const { title, description, date, time, location } = req.body;
+  
+    const eventIndex = events.findIndex(event => event.id === eventId);
+    if (eventIndex === -1) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+  
+    // Update only the provided fields
+    events[eventIndex] = {
+      ...events[eventIndex],
+      title: title || events[eventIndex].title,
+      description: description || events[eventIndex].description,
+      date: date || events[eventIndex].date,
+      time: time || events[eventIndex].time,
+      location: location || events[eventIndex].location
+    };
+  
+    res.json(events[eventIndex]);
+  });
+  
+
 module.exports = router;
