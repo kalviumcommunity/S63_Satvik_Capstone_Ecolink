@@ -56,4 +56,4 @@ Community Building: Mobilizes volunteers and local action.
 
 Engagement: Uses virtual pets and gamified elements for a fun, meaningful experience.
 
- deployed frontend link:"https://ecolinkk.netlify.app/"
+ deployed  frontend  link:"https://ecolinkk.netlify.app/"
