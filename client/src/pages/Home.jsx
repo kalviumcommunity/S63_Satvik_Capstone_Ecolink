@@ -1,6 +1,7 @@
 import React from 'react';
 import LoginForm from '../components/auth/LoginForm';
 import SignUpForm from '../components/auth/SignUpForm';
+import FileUpload from '../components/upload/FileUpload';
 
 const Home = () => {
   return (
@@ -15,6 +16,10 @@ const Home = () => {
         <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
           <SignUpForm />
         </div>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4 text-green-700">Upload a File</h2>
+        <FileUpload />
       </div>
     </div>
   );
