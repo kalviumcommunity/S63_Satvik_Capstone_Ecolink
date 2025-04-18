@@ -6,7 +6,11 @@ require('dotenv').config();
 const connectDB = require('./Database/db');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Connect to MongoDB
@@ -20,6 +24,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const userRoutes = require('./routes/userRoutes');
 const participantsRoutes = require('./routes/participantRoutes');
 const uploadRoutes = require('./routes/upload'); 
+const authRoutes = require('./routes/authRoutes');
+
 
 // Base route
 app.get('/', (req, res) => res.send('EcoLink Backend Running!'));
@@ -28,7 +34,8 @@ app.get('/', (req, res) => res.send('EcoLink Backend Running!'));
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/participants', participantsRoutes);
-app.use('/api/upload', uploadRoutes); 
+app.use('/api/upload', uploadRoutes);
+app.use('/api/auth', authRoutes); 
 
 // Start server
 const PORT = process.env.PORT || 5000;
