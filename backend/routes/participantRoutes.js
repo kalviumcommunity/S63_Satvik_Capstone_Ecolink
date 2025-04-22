@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const Participant = require('../models/Participant');
 
 // Dummy participants data for local testing
 let participants = [
