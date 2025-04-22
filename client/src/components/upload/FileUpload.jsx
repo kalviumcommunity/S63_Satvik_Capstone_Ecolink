@@ -22,9 +22,9 @@ const FileUpload = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage(`✅ File uploaded: ${res.data.filename}`);
+      setMessage(` File uploaded: ${res.data.filename}`);
     } catch (err) {
-      setMessage('❌ Upload failed');
+      setMessage(' Upload failed');
     }
   };
 
