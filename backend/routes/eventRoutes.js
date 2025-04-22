@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 
+
 // Dummy event data for local testing
 const events = [
   {
