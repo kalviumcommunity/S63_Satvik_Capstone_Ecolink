@@ -1,11 +1,21 @@
 meta {
   name: post
   type: http
-  seq: 5
+  seq: 3
 }
 
 post {
   url: http://localhost:5000/api/events
-  body: none
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "title": "Tree Plantation Day",
+    "description": "Let plant 100 trees together!",
+    "date": "2025-04-25",
+    "time": "08:30 AM",
+    "location": "Eco Park, Delhi"
+  }
 }
