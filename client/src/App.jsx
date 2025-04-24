@@ -10,7 +10,8 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import EventsPage from './pages/EventsPage';
-import SpeciesPage from './pages/SpeciesPage';
+import SpeciesPage from './pages/Species';
+import Leaderboard from './pages/Leaderboard';
 import './App.css';
 
 const LandingPage = () => (
@@ -36,6 +37,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/species" element={<SpeciesPage />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </main>
       </div>
