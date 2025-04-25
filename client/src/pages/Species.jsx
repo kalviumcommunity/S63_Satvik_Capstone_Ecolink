@@ -1,127 +1,118 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import SpeciesImagePlaceholder from '../components/SpeciesImagePlaceholder';
 
 const SpeciesCard = ({ name, status, population, habitat, threats, description, image }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Generate a placeholder color based on the species name
-  const getPlaceholderImage = (name) => {
-    const colors = ['4CAF50', '2196F3', 'FF9800', '9C27B0', '607D8B'];
-    const index = name.length % colors.length;
-    return `https://placehold.co/800x400/${colors[index]}/FFFFFF/png?text=${encodeURIComponent(name)}`;
-  };
-
-  const handleImageError = (e) => {
-    console.error('Image failed to load:', e);
-    setImageError(true);
-    setImageLoaded(false);
-  };
-
-  const handleImageLoad = () => {
-    console.log('Image loaded successfully');
-    setImageLoaded(true);
-    setImageError(false);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Critically Endangered':
+        return 'bg-red-500';
+      case 'Endangered':
+        return 'bg-orange-500';
+      case 'Vulnerable':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md">
+    <Card hover variant="elevated" className="overflow-hidden">
       <div className="flex flex-col md:flex-row">
         {/* Left side - Image */}
-        <div className="md:w-1/3 relative bg-green-50">
+        <div className="md:w-2/5 relative">
           {(!imageLoaded || imageError) && (
             <div className="absolute inset-0">
               <SpeciesImagePlaceholder name={name} />
             </div>
           )}
           <img 
-            src={image || getPlaceholderImage(name)} 
+            src={image} 
             alt={name}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
+            className={`w-full h-[300px] md:h-full object-cover transition-opacity duration-300 ${
               imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
             }`}
-            style={{ minHeight: '300px' }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            crossOrigin="anonymous"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
           />
         </div>
 
         {/* Right side - Content */}
-        <div className="md:w-2/3 p-6">
+        <div className="md:w-3/5 p-8">
           {/* Title and Status */}
-          <div className="mb-4">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{name}</h2>
-            <span className={`inline-block px-4 py-1 text-white text-sm font-medium rounded-full ${
-              status === 'Critically Endangered' ? 'bg-red-500' : 
-              status === 'Endangered' ? 'bg-orange-500' : 
-              'bg-yellow-500'
-            }`}>
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-800 mb-3 font-display">{name}</h2>
+            <span className={`inline-block px-4 py-1.5 text-white text-sm font-semibold rounded-full ${getStatusColor(status)}`}>
               {status}
             </span>
           </div>
 
-          {/* About Section */}
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-2">About Me</h3>
-            <p className="text-gray-600">{description}</p>
+          {/* Description */}
+          <div className="mb-8">
+            <p className="text-gray-600 leading-relaxed">{description}</p>
           </div>
 
-          {/* Facts Section */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Facts</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* Population */}
-              <div className="bg-green-50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="font-medium">Population</span>
-                </div>
-                <span className="text-gray-600 text-sm">{population}</span>
+          {/* Facts Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {/* Population */}
+            <Card hover variant="default" className="bg-primary-50">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="font-semibold text-primary-800">Population</span>
               </div>
+              <p className="text-primary-700 text-sm">{population}</p>
+            </Card>
 
-              {/* Habitat */}
-              <div className="bg-green-50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="font-medium">Habitat</span>
-                </div>
-                <span className="text-gray-600 text-sm">{habitat}</span>
+            {/* Habitat */}
+            <Card hover variant="default" className="bg-primary-50">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-semibold text-primary-800">Habitat</span>
               </div>
+              <p className="text-primary-700 text-sm">{habitat}</p>
+            </Card>
 
-              {/* Threats */}
-              <div className="bg-green-50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span className="font-medium">Threats</span>
-                </div>
-                <span className="text-gray-600 text-sm">{threats}</span>
+            {/* Threats */}
+            <Card hover variant="default" className="bg-primary-50">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="font-semibold text-primary-800">Threats</span>
               </div>
-            </div>
+              <p className="text-primary-700 text-sm">{threats}</p>
+            </Card>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 mt-6">
-            <button className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+          <div className="flex flex-wrap gap-4">
+            <Button variant="primary" size="lg">
               Add as Pet
-            </button>
-            <button className="px-4 py-2 text-green-600 text-sm font-medium hover:bg-green-50 rounded-lg transition-colors">
+            </Button>
+            <Button variant="outline" size="lg">
               Learn More
-            </button>
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
 const SpeciesPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All Status");
+  const [selectedRegion, setSelectedRegion] = useState("All Regions");
+
   const speciesData = [
     {
       name: "Amur Leopard",
@@ -130,7 +121,7 @@ const SpeciesPage = () => {
       habitat: "Temperate forests",
       threats: "Habitat loss, poaching",
       description: "The Amur leopard is one the world's most endangered big cats, found primarily in the temperate forests of the Russian Far East. With a population of fewer than 100 individuals in the wild, they face threats from habitat loss, poaching, and prey depletion. Conservation efforts are underway to protect this majestic species.",
-      image: "https://images.unsplash.com/photo-1456926631375-92c8ce872def?w=800&auto=format&fit=crop"
+      image: "https://i.natgeofe.com/n/6490d605-3ef3-4c44-8a4d-582c8f45da86/amur-leopard-upclose_16x9.jpg"
     },
     {
       name: "Giant Panda",
@@ -170,59 +161,109 @@ const SpeciesPage = () => {
     }
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Endangered Species</h1>
-          <p className="text-gray-600">Learn about and help protect these remarkable creatures</p>
-        </div>
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0 }
+  };
 
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="relative flex-grow max-w-xl">
-              <input
-                type="text"
-                placeholder="Search species..."
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <svg
-                className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header Section */}
+        <motion.div 
+          className="text-center mb-12"
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={fadeInUp}
+        >
+          <h1 className="text-5xl font-bold text-gray-900 mb-4 font-display">
+            Endangered Species
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Discover and learn about remarkable creatures that need our help and protection
+          </p>
+        </motion.div>
+
+        {/* Filters Section */}
+        <Card className="mb-12">
+          <Card.Body>
+            <div className="flex flex-col md:flex-row gap-6 items-stretch">
+              {/* Search */}
+              <div className="flex-grow">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search species..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-700 text-lg"
+                  />
+                  <svg
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-700 text-lg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <div className="flex gap-4">
-              <select className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option>All Status</option>
                 <option>Critically Endangered</option>
                 <option>Endangered</option>
                 <option>Vulnerable</option>
               </select>
-              <select className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+
+              {/* Region Filter */}
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-700 text-lg"
+              >
                 <option>All Regions</option>
                 <option>Asia</option>
                 <option>Africa</option>
-                <option>Americas</option>
+                <option>North America</option>
+                <option>South America</option>
                 <option>Europe</option>
                 <option>Oceania</option>
               </select>
             </div>
-          </div>
-        </div>
+          </Card.Body>
+        </Card>
 
-        <div className="space-y-6">
-          {speciesData.map((species, index) => (
-            <SpeciesCard key={index} {...species} />
-          ))}
+        {/* Species Grid */}
+        <div className="space-y-8">
+          {speciesData
+            .filter(species => 
+              species.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+              (selectedStatus === "All Status" || species.status === selectedStatus) &&
+              (selectedRegion === "All Regions" || species.habitat.includes(selectedRegion))
+            )
+            .map((species, index) => (
+              <motion.div
+                key={species.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <SpeciesCard {...species} />
+              </motion.div>
+            ))}
         </div>
       </div>
     </div>
