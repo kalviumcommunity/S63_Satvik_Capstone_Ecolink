@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
@@ -6,12 +8,12 @@ require('dotenv').config();
 const connectDB = require('./Database/db');
 const app = express();
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true
+}));
 
 // Connect to MongoDB
 connectDB();
@@ -26,9 +28,11 @@ const participantsRoutes = require('./routes/participantRoutes');
 const uploadRoutes = require('./routes/upload'); 
 const authRoutes = require('./routes/authRoutes');
 
+// Serve public static files (e.g., images)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Base route
-app.get('/', (req, res) => res.send('EcoLink Backend Running!'));
+app.get('/', (req, res) => res.json({ status: 'API Running', message: 'Welcome to the EcoLink API' }));
 
 // API routes
 app.use('/api/events', eventRoutes);
@@ -37,10 +41,20 @@ app.use('/api/participants', participantsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes); 
 
+// Error Handling Middleware
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Not Found' });
+});
 
+app.use((err, req, res, next) => {
+  console.error("Global Error Handler:", err.stack);
+  res.status(err.status || 500).json({ 
+      message: err.message || 'Internal Server Error' 
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
