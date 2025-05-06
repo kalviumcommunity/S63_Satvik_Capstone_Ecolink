@@ -11,6 +11,16 @@ const eventSchema = new mongoose.Schema({
     required: true,
   },
   location: String,
+  communityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Community',
+    required: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   ngo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' // only if NGO is stored in the User schema with role='ngo'

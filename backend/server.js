@@ -27,6 +27,8 @@ const userRoutes = require('./routes/userRoutes');
 const participantsRoutes = require('./routes/participantRoutes');
 const uploadRoutes = require('./routes/upload'); 
 const authRoutes = require('./routes/authRoutes');
+const speciesRoutes = require('./routes/speciesRoutes');
+const communityRoutes = require('./routes/communityRoutes');
 
 // Serve public static files (e.g., images)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -39,7 +41,9 @@ app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/participants', participantsRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
+app.use('/api/species', speciesRoutes);
+app.use('/api/communities', communityRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {

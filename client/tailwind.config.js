@@ -63,6 +63,8 @@ export default {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-up': 'slideUp 0.4s ease-out',
         'slide-down': 'slideDown 0.4s ease-out',
+        'fade-in-out': 'fade-in-out 2s ease-in-out',
+        'jiggle': 'jiggle 0.5s ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -77,11 +79,24 @@ export default {
           '0%': { transform: 'translateY(-20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        'fade-in-out': {
+          '0%, 100%': { opacity: 0 },
+          '50%': { opacity: 1 },
+        },
+        'jiggle': {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
+        },
       },
     },
   },
   plugins: [
-    require('@tailwindcss/forms'),
+    // Forms plugin commented out to prevent error
+    // require('@tailwindcss/forms'),
   ],
   darkMode: 'class',
+  safelist: [
+    'animate-fade-in-out',
+    'animate-jiggle',
+  ],
 }

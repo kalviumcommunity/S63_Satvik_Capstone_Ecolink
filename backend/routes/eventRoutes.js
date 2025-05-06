@@ -1,106 +1,143 @@
 const express = require('express');
 const router = express.Router();
+const Event = require('../models/Event');
+const Community = require('../models/Community');
+const { verifyToken } = require('../middleware/authMiddleware');
 
-// Dummy events data for local testing
-let events = [
-  {
-    id: 1,
-    title: 'Tree Plantation Drive',
-    description: 'Join us for a community tree planting event',
-    date: '2023-07-15',
-    time: '09:00 AM',
-    location: 'City Park'
-  },
-  {
-    id: 2,
-    title: 'Beach Cleanup',
-    description: 'Help clean our local beaches',
-    date: '2023-07-22',
-    time: '08:30 AM',
-    location: 'Main Beach'
-  },
-  {
-    id: 3,
-    title: 'Wildlife Conservation Workshop',
-    description: 'Learn about local wildlife and conservation efforts',
-    date: '2023-07-29',
-    time: '10:00 AM',
-    location: 'Community Center'
+// GET /api/events - Get all events (public)
+router.get('/', async (req, res) => {
+  try {
+    const events = await Event.find()
+      .populate('communityId', 'name')
+      .populate('createdBy', 'name');
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ message: 'Server error fetching events' });
   }
-];
-
-// GET /api/events - Returns all events
-router.get('/', (req, res) => {
-  res.json(events);
 });
 
-// GET /api/events/:id - Returns a specific event by ID
-router.get('/:id', (req, res) => {
-  const eventId = parseInt(req.params.id);
-  const event = events.find(e => e.id === eventId);
-  
-  if (!event) {
-    return res.status(404).json({ error: 'Event not found.' });
+// GET /api/events/:id - Get event by ID (public)
+router.get('/:id', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id)
+      .populate('communityId', 'name')
+      .populate('createdBy', 'name');
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    res.json(event);
+  } catch (error) {
+    console.error('Error fetching event by ID:', error);
+    res.status(500).json({ message: 'Server error fetching event' });
   }
-  
-  res.json(event);
 });
 
-// POST /api/events - Add a new event
-router.post('/', (req, res) => {
-  const { title, description, date, time, location } = req.body;
-
-  if (!title || !description || !date || !time || !location) {
-    return res.status(400).json({ error: 'All fields are required.' });
+// POST /api/events - Create a new event (protected)
+router.post('/', verifyToken, async (req, res) => {
+  try {
+    const { title, description, date, location, communityId } = req.body;
+    
+    // Validate required fields
+    if (!title || !description || !date || !location) {
+      return res.status(400).json({ message: 'Title, description, date, and location are required' });
+    }
+    
+    // If communityId is provided, verify that the user is the community owner
+    if (communityId) {
+      const community = await Community.findById(communityId);
+      if (!community) {
+        return res.status(404).json({ message: 'Community not found' });
+      }
+      
+      if (community.owner.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'Only the community owner can create events' });
+      }
+    }
+    
+    // Create new event
+    const newEvent = new Event({
+      title,
+      description,
+      date,
+      location,
+      communityId,
+      createdBy: req.user.id
+    });
+    
+    await newEvent.save();
+    
+    // Populate creator and community info
+    const event = await Event.findById(newEvent._id)
+      .populate('communityId', 'name')
+      .populate('createdBy', 'name');
+    
+    res.status(201).json(event);
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ message: 'Server error creating event' });
   }
-
-  const newEvent = {
-    id: events.length + 1,
-    title,
-    description,
-    date,
-    time,
-    location
-  };
-
-  events.push(newEvent);
-  res.status(201).json(newEvent);
 });
 
-// PUT /api/events/:id - Update event details
-router.put('/:id', (req, res) => {
-  const eventId = parseInt(req.params.id);
-  const { title, description, date, time, location } = req.body;
-
-  const index = events.findIndex(e => e.id === eventId);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Event not found.' });
+// PUT /api/events/:id - Update event (protected, only creator)
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
+    const { title, description, date, location } = req.body;
+    
+    // Find event
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    // Check if user is the creator
+    if (event.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Only the event creator can update this event' });
+    }
+    
+    // Update fields
+    if (title) event.title = title;
+    if (description) event.description = description;
+    if (date) event.date = date;
+    if (location) event.location = location;
+    
+    await event.save();
+    
+    // Populate creator and community info
+    const updatedEvent = await Event.findById(event._id)
+      .populate('communityId', 'name')
+      .populate('createdBy', 'name');
+    
+    res.json(updatedEvent);
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ message: 'Server error updating event' });
   }
-
-  // Update fields only if provided
-  events[index] = {
-    ...events[index],
-    title: title || events[index].title,
-    description: description || events[index].description,
-    date: date || events[index].date,
-    time: time || events[index].time,
-    location: location || events[index].location
-  };
-
-  res.json(events[index]);
 });
 
-// DELETE /api/events/:id - Delete an event by ID
-router.delete('/:id', (req, res) => {
-  const eventId = parseInt(req.params.id);
-
-  const index = events.findIndex(e => e.id === eventId);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Event not found.' });
+// DELETE /api/events/:id - Delete event (protected, only creator)
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    // Find event
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    // Check if user is the creator
+    if (event.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Only the event creator can delete this event' });
+    }
+    
+    await event.deleteOne();
+    
+    res.json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    res.status(500).json({ message: 'Server error deleting event' });
   }
-
-  const deletedEvent = events.splice(index, 1)[0];
-  res.json({ message: 'Event deleted successfully.', event: deletedEvent });
 });
 
 module.exports = router;
