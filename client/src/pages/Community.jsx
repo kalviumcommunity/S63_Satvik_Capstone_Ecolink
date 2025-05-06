@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Updated CommunityIcon to use an embedded SVG
 const CommunityIcon = () => (
@@ -31,31 +31,71 @@ const MessageCard = ({ orgName, message, timeAgo, isLast }) => (
   </div>
 );
 
+const USER_ID = '000000000000000000000001';
+
 // Main Community Page Component
 const Community = () => {
-  // Sample message data
-  const messages = [
-    {
-      orgName: "Green Earth Alliance",
-      message: "Excited for the community garden launch this Sunday!",
-      timeAgo: "1h ago"
-    },
-    {
-      orgName: "Ocean Guardians",
-      message: "Planning our next beach cleaning event. Dates coming soon!",
-      timeAgo: "4h ago"
-    },
-    {
-      orgName: "Wildlife Protectors",
-      message: "Thanks to all who supported the wildlife fundraiser yesterday!",
-      timeAgo: "8h ago"
-    },
-    {
-      orgName: "EcoFuture",
-      message: "Any recommendations for sustainable event suppliers? ♻️",
-      timeAgo: "1d ago"
+  const [communities, setCommunities] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  // Fetch communities from backend
+  const fetchCommunities = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('http://localhost:5000/api/communities');
+      const data = await res.json();
+      setCommunities(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Failed to load communities');
     }
-  ];
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+
+  // Handle join community
+  const handleJoin = async (communityId) => {
+    setError('');
+    try {
+      const res = await fetch(`http://localhost:5000/api/communities/${communityId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: USER_ID })
+      });
+      if (!res.ok) throw new Error('Failed to join community');
+      fetchCommunities();
+    } catch (err) {
+      setError('Failed to join community');
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!name || !description) {
+      setError('Name and description are required');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:5000/api/communities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description, owner: USER_ID })
+      });
+      if (!res.ok) throw new Error('Failed to create community');
+      setName('');
+      setDescription('');
+      fetchCommunities();
+    } catch (err) {
+      setError('Failed to create community');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
@@ -85,27 +125,65 @@ const Community = () => {
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Left Icon */}
-          <div className="flex justify-center md:justify-start">
-             <CommunityIcon />
-          </div>
-         
-          {/* Right Message Feed */}
-          <div className="flex-grow bg-white rounded-lg shadow-sm p-6">
-            {messages.map((msg, index) => (
-              <MessageCard 
-                key={index} 
-                {...msg} 
-                isLast={index === messages.length - 1} 
-              />
-            ))}
-             {/* Placeholder for more actions if needed */}
-             <div className="text-center mt-4">
-                <span className="text-gray-400 text-xl">...</span>
-             </div>
-          </div>
+        {/* Create Community Form */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-green-700">Create a Community</h2>
+          <form onSubmit={handleCreate} className="flex flex-col gap-4 md:flex-row md:items-end">
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Community Name"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <input
+              type="text"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Description"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <button
+              type="submit"
+              className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            >
+              Create
+            </button>
+          </form>
+          {error && <div className="text-red-500 mt-2">{error}</div>}
+        </div>
+
+        {/* Community List */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-green-700">All Communities</h2>
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <div>
+              {communities.map((c, index) => {
+                const isMember = c.members && c.members.includes(USER_ID);
+                return (
+                  <div
+                    key={c._id}
+                    className={`py-4 flex items-center justify-between ${index !== communities.length - 1 ? 'border-b border-gray-200' : ''}`}
+                  >
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{c.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{c.description}</p>
+                    </div>
+                    <button
+                      className={`ml-4 px-4 py-1 rounded ${isMember ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                      disabled={isMember}
+                      onClick={() => handleJoin(c._id)}
+                    >
+                      {isMember ? 'Joined' : 'Join Community'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {error && <div className="text-red-500 mt-2">{error}</div>}
         </div>
       </div>
     </div>

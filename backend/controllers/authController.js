@@ -35,7 +35,7 @@ const generateToken = (user) => {
 
 // Register new user
 const register = async (req, res) => {
-  console.log("Backend: /register endpoint hit"); // Log start
+  console.log("Backend: /register endpoint hit");
   try {
     const { name, email, password } = req.body;
     console.log("Backend Register Data:", { name, email, password: '[REDACTED]' });
@@ -45,13 +45,11 @@ const register = async (req, res) => {
       console.log("Backend Register Validation Failed: Missing fields");
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
-    // Add more validation (e.g., email format, password strength) as needed
 
-    // --- Check if user exists (using mock data) ---
-    // In a real app: const existingUser = await User.findOne({ email });
-    const existingUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    // --- Check if user exists (using real DB) ---
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-       console.log(`Backend Register Failed: User exists - ${email}`);
+      console.log(`Backend Register Failed: User exists - ${email}`);
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
@@ -60,18 +58,15 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // --- Create New User (using mock data) ---
-    // In a real app: const newUser = new User({ name, email, password: passwordHash, role: 'user' });
-    //              await newUser.save();
-    const newUser = {
-        _id: `mockid_${Date.now()}`,
-        name,
-        email,
-        passwordHash,
-        role: 'user' // Default role
-    };
-    mockUsers.push(newUser);
-    console.log("Backend Register: New user created (mock):", newUser.email);
+    // --- Create New User (using real DB) ---
+    const newUser = new User({
+      name,
+      email: email.toLowerCase(),
+      password: passwordHash,
+      role: 'volunteer' // Using 'volunteer' as it's a valid role in the User model
+    });
+    await newUser.save();
+    console.log("Backend Register: New user created (db):", newUser.email);
 
     // --- Generate Token ---
     const token = generateToken(newUser);
@@ -81,17 +76,15 @@ const register = async (req, res) => {
     res.cookie('token', token, jwtConfig.cookieOptions);
 
     // Return user data (excluding password) and the token itself
-    const { passwordHash: _, ...userResponse } = newUser;
-    
+    const { password: _, ...userResponse } = newUser.toObject();
     console.log(`Backend Register: Responding 201 for ${email}`);
     res.status(201).json({
       message: 'Registration successful',
       user: userResponse,
-      token // Sending token in response body is common for client-side storage
+      token
     });
-
   } catch (error) {
-    console.error('Backend Register Error:', error); // Log the full error
+    console.error('Backend Register Error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
@@ -106,23 +99,21 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // --- Find User (using mock data) ---
-    // In a real app: const user = await User.findOne({ email });
-    const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    // --- Find User (using real DB) ---
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-        console.log(`Login failed: No user found with email ${email}`);
-      return res.status(401).json({ message: 'Invalid credentials' }); // Use generic message
+      console.log(`Login failed: No user found with email ${email}`);
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // --- Validate Password ---
-    // In a real app: const isMatch = await bcrypt.compare(password, user.password);
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-        console.log(`Login failed: Password mismatch for email ${email}`);
-      return res.status(401).json({ message: 'Invalid credentials' }); // Use generic message
+      console.log(`Login failed: Password mismatch for email ${email}`);
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-     // --- Generate Token ---
+    // --- Generate Token ---
     const token = generateToken(user);
 
     // --- Set Cookie and Send Response ---
@@ -130,14 +121,12 @@ const login = async (req, res) => {
     console.log(`Login successful for ${email}, token set in cookie.`);
 
     // Return user data (excluding password) and token
-    const { passwordHash: _, ...userResponse } = user;
-
+    const { password: _, ...userResponse } = user.toObject();
     res.status(200).json({
       message: 'Login successful',
       user: userResponse,
-      token // Send token in body as well
+      token
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
@@ -149,22 +138,12 @@ const getCurrentUser = async (req, res) => {
   try {
     // req.user is populated by the verifyToken middleware with the token payload
     // Find the full user details from the database using the ID from the token
-    // In a real app: const user = await User.findById(req.user.id).select('-password');
-    
-    // Using mock data:
-    const user = mockUsers.find(u => u._id === req.user.id);
-
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
-        console.log(`Get current user failed: No user found with ID ${req.user.id}`);
-      // This case should ideally not happen if the token is valid unless the user was deleted
+      console.log(`Get current user failed: No user found with ID ${req.user.id}`);
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Exclude password hash before sending
-    const { passwordHash, ...userResponse } = user;
-
-    res.status(200).json({ user: userResponse });
-
+    res.status(200).json({ user });
   } catch (error) {
     console.error('Get current user error:', error);
     res.status(500).json({ message: 'Server error fetching user profile' });

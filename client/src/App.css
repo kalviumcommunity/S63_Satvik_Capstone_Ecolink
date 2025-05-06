@@ -60,3 +60,59 @@
     padding-top: 56px; /* Smaller padding for mobile */
   }
 }
+
+/* Pet Animation Effects */
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-float {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce-away {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-30px) translateX(20px) scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-80px) translateX(40px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-float-up {
+  animation: float-up 2s ease-out forwards;
+}
+
+.animate-spin-float {
+  animation: spin-float 2s ease-out forwards;
+}
+
+.animate-bounce-away {
+  animation: bounce-away 2s ease-out forwards;
+}
+
+/* Ensure animations play smoothly */
+.motion-reduce {
+  animation: none !important;
+  transform: none !important;
+}
