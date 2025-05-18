@@ -163,6 +163,12 @@ const EventCard = ({
         
         <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">{title}</h3>
         <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4 line-clamp-2">{description}</p>
+        {event.communityId?.name && (
+          <p className="text-xs text-green-700 font-semibold mb-2">Community: {event.communityId.name}</p>
+        )}
+        {event.communityName && !event.communityId?.name && (
+          <p className="text-xs text-green-700 font-semibold mb-2">Community: {event.communityName}</p>
+        )}
         
         <div className="space-y-3 text-sm text-neutral-500 dark:text-neutral-400 mb-4">
           <div className="flex items-center">

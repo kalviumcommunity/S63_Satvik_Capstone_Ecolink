@@ -10,6 +10,7 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  time: String,
   location: String,
   communityId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,7 +30,22 @@ const eventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  impact: String // e.g., "Planted 100 trees"
+  impact: String, // e.g., "Planted 100 trees"
+  imageUrl: String, // URL of the uploaded event image
+  registrations: [
+    {
+      mode: String, // 'solo' or 'team'
+      name: String,
+      email: String,
+      teamName: String,
+      members: [
+        {
+          name: String,
+          email: String
+        }
+      ]
+    }
+  ]
 });
 
 module.exports = mongoose.model('Event', eventSchema);

@@ -16,7 +16,7 @@ const upload = multer({ storage });
 // POST /api/upload
 router.post('/', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  res.json({ filename: req.file.filename });
+  res.json({ url: `/uploads/${req.file.filename}` });
 });
 
 module.exports = router;
