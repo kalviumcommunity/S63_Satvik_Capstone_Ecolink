@@ -21,7 +21,10 @@ const LoginForm = () => {
     try {
       console.log('Login request data:', formData);
       const user = await login(formData);
-      console.log('Login successful:', user);
+      console.log('Login successful:', user);            
+
+
+      
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);

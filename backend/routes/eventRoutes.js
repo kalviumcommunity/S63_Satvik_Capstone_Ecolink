@@ -4,13 +4,36 @@ const Event = require('../models/Event');
 const Community = require('../models/Community');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// GET /api/events - Get all events (public)
-router.get('/', async (req, res) => {
+// GET /api/events - Get all events (protected for community filter)
+router.get('/', verifyToken, async (req, res) => {
   try {
-    const events = await Event.find()
+    const filter = {};
+    // Only show strictly future events (after today)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    filter.date = { $gt: today };
+    if (req.query.community) {
+      // Check membership
+      const community = await Community.findById(req.query.community);
+      if (!community) {
+        return res.status(404).json({ message: 'Community not found' });
+      }
+      const userId = req.user.id;
+      const isOwner = community.owner.toString() === userId;
+      const isMember = (community.members || []).map(m => m.toString()).includes(userId);
+      if (!isOwner && !isMember) {
+        return res.status(403).json({ message: 'You are not a member of this community' });
+      }
+      filter.communityId = req.query.community;
+    }
+    const events = await Event.find(filter)
       .populate('communityId', 'name')
       .populate('createdBy', 'name');
-    res.json(events);
+    const eventsWithCount = events.map(e => ({
+      ...e.toObject(),
+      registrationCount: e.registrations ? e.registrations.length : 0
+    }));
+    res.json(eventsWithCount);
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({ message: 'Server error fetching events' });
@@ -38,7 +61,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/events - Create a new event (protected)
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { title, description, date, location, communityId } = req.body;
+    const { title, description, date, location, communityId, imageUrl } = req.body;
     
     // Validate required fields
     if (!title || !description || !date || !location) {
@@ -64,7 +87,8 @@ router.post('/', verifyToken, async (req, res) => {
       date,
       location,
       communityId,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      ...(imageUrl ? { imageUrl } : {})
     });
     
     await newEvent.save();
@@ -84,7 +108,7 @@ router.post('/', verifyToken, async (req, res) => {
 // PUT /api/events/:id - Update event (protected, only creator)
 router.put('/:id', verifyToken, async (req, res) => {
   try {
-    const { title, description, date, location } = req.body;
+    const { title, description, date, location, imageUrl } = req.body;
     
     // Find event
     const event = await Event.findById(req.params.id);
@@ -102,6 +126,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     if (description) event.description = description;
     if (date) event.date = date;
     if (location) event.location = location;
+    if (imageUrl) event.imageUrl = imageUrl;
     
     await event.save();
     
@@ -137,6 +162,21 @@ router.delete('/:id', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error deleting event:', error);
     res.status(500).json({ message: 'Server error deleting event' });
+  }
+});
+
+// POST /api/events/:id/register - Register for an event (solo or team)
+router.post('/:id/register', async (req, res) => {
+  try {
+    const { mode, name, email, teamName, members } = req.body;
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    event.registrations.push({ mode, name, email, teamName, members });
+    await event.save();
+    res.json({ success: true, message: 'Registration received!' });
+  } catch (error) {
+    console.error('Error registering for event:', error);
+    res.status(500).json({ message: 'Server error registering for event' });
   }
 });
 

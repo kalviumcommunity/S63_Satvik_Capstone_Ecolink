@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const bcryptjs = require('bcryptjs');
 
-
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -31,15 +30,22 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-//  Hash password before saving
+// Pre-save hook to hash password
 userSchema.pre('save', async function (next) {
   console.log('Pre-save hook triggered');
-  
+
+  // Only hash if the password is new or modified
   if (!this.isModified('password')) {
     console.log('Password not modified, skipping hashing');
     return next();
   }
-  
+
+  // If the password is already a bcrypt hash, skip hashing
+  if (this.password && this.password.startsWith('$2a$')) {
+    console.log('Password already hashed, skipping hashing');
+    return next();
+  }
+
   try {
     console.log('Hashing password...');
     const salt = await bcryptjs.genSalt(10);
@@ -52,10 +58,12 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-//  Compare password method
+// Method to compare password
 userSchema.methods.comparePassword = async function (enteredPassword) {
   try {
     console.log('Comparing passwords...');
+    console.log('Entered:', enteredPassword);
+    console.log('Stored:', this.password);
     const isMatch = await bcryptjs.compare(enteredPassword, this.password);
     console.log(`Password comparison result: ${isMatch}`);
     return isMatch;
@@ -64,6 +72,5 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
     throw error;
   }
 };
-
 
 module.exports = mongoose.model('User', userSchema);

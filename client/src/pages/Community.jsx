@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import CommunityEvents from '../components/CommunityEvents';
 
 // Updated CommunityIcon to use an embedded SVG
 const CommunityIcon = () => (
@@ -31,15 +33,17 @@ const MessageCard = ({ orgName, message, timeAgo, isLast }) => (
   </div>
 );
 
-const USER_ID = '000000000000000000000001';
-
-// Main Community Page Component
 const Community = () => {
+  const { currentUser } = useAuth();
   const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [createEventFor, setCreateEventFor] = useState(null);
+
+  if (!currentUser) return null;
+  const userId = String(currentUser?._id || currentUser?.id);
 
   // Fetch communities from backend
   const fetchCommunities = async () => {
@@ -63,10 +67,13 @@ const Community = () => {
   const handleJoin = async (communityId) => {
     setError('');
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/communities/${communityId}/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: USER_ID })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (!res.ok) throw new Error('Failed to join community');
       fetchCommunities();
@@ -83,10 +90,14 @@ const Community = () => {
       return;
     }
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:5000/api/communities', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, owner: USER_ID })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, description })
       });
       if (!res.ok) throw new Error('Failed to create community');
       setName('');
@@ -161,23 +172,42 @@ const Community = () => {
           ) : (
             <div>
               {communities.map((c, index) => {
-                const isMember = c.members && c.members.includes(USER_ID);
+                // Handle owner as string or {_id: ...}
+                const ownerId = typeof c.owner === 'object' && c.owner !== null ? String(c.owner._id) : String(c.owner);
+                const isOwner = ownerId === userId;
+                // Handle members as string or {_id: ...}
+                const memberIds = c.members ? c.members.map(m => typeof m === 'object' && m !== null ? String(m._id) : String(m)) : [];
+                const isMember = isOwner || memberIds.includes(userId);
+                console.log('userId:', userId, 'community.owner:', c.owner, 'ownerId:', ownerId, 'isOwner:', isOwner, 'memberIds:', memberIds, 'isMember:', isMember);
                 return (
                   <div
                     key={c._id}
-                    className={`py-4 flex items-center justify-between ${index !== communities.length - 1 ? 'border-b border-gray-200' : ''}`}
+                    className={`py-4 flex flex-col md:flex-row md:items-center justify-between ${index !== communities.length - 1 ? 'border-b border-gray-200' : ''}`}
                   >
                     <div>
                       <h4 className="font-semibold text-gray-800">{c.name}</h4>
                       <p className="text-sm text-gray-600 mt-1">{c.description}</p>
                     </div>
-                    <button
-                      className={`ml-4 px-4 py-1 rounded ${isMember ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
-                      disabled={isMember}
-                      onClick={() => handleJoin(c._id)}
-                    >
-                      {isMember ? 'Joined' : 'Join Community'}
-                    </button>
+                    <div className="flex items-center gap-2 mt-2 md:mt-0">
+                      {isOwner && <span className="px-3 py-1 bg-green-200 text-green-800 rounded">Joined (Owner)</span>}
+                      {!isOwner && isMember && <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded">Joined</span>}
+                      {!isOwner && !isMember && (
+                        <button
+                          className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                          onClick={() => handleJoin(c._id)}
+                        >
+                          Join Community
+                        </button>
+                      )}
+                    </div>
+                    {/* Show events for joined communities only */}
+                    {(isOwner || isMember) && (
+                      <CommunityEvents community={c} showCreateForm={createEventFor === c._id} onCloseCreateForm={() => setCreateEventFor(null)} />
+                    )}
+                    {/* Only show join-to-view message to non-members who are not owner */}
+                    {!isOwner && !isMember && (
+                      <span style={{ color: 'red', marginLeft: 8 }}>Join this community to view events.</span>
+                    )}
                   </div>
                 );
               })}

@@ -17,6 +17,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'backend/uploads')));
+
 // Serve static files from the client's dist directory
 app.use(express.static(path.join(__dirname, 'client/dist')));
 

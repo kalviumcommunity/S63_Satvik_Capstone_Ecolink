@@ -45,6 +45,19 @@ app.use('/api/auth', authRoutes);
 app.use('/api/species', speciesRoutes);
 app.use('/api/communities', communityRoutes);
 
+// TEMPORARY: Route to delete a user by email for debugging login issues
+const User = require('./models/User');
+app.delete('/api/debug/delete-user', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ message: 'Email query param required' });
+    const result = await User.deleteOne({ email: email.toLowerCase() });
+    res.json({ message: 'User deleted', result });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting user', error: err.message });
+  }
+});
+
 // Error Handling Middleware
 app.use((req, res, next) => {
   res.status(404).json({ message: 'Not Found' });
