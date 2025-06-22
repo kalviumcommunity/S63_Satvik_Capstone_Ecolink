@@ -337,6 +337,7 @@ const Dashboard = () => {
                 Daily Eco-Tip
               </h3>
               <EcoTipCard tip={ecoTip} />
+              <EcoTipCard tip="Save energy! Turn off lights and unplug electronics when not in use to reduce your carbon footprint." />
             </section>
           </div>
 
