@@ -43,6 +43,7 @@ const uploadRoutes = require('./routes/upload');
 const authRoutes = require('./routes/authRoutes');
 const speciesRoutes = require('./routes/speciesRoutes');
 const communityRoutes = require('./routes/communityRoutes');
+const autocompleteRoutes = require('./routes/autocompleteRoutes');
 
 // Serve public static files (e.g., images)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -58,6 +59,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/species', speciesRoutes);
 app.use('/api/communities', communityRoutes);
+app.use('/api/autocomplete', autocompleteRoutes);
 
 // TEMPORARY: Route to delete a user by email for debugging login issues
 const User = require('./models/User');
